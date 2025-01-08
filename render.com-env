@@ -1,0 +1,2 @@
+MONGODB_URI=mongodb+srv://apachedragonfly:PZ2fIljaBoWSkEqp@pplworkouttracker.8yaai.mongodb.net/?retryWrites=true&w=majority&appName=PPLWorkoutTracker
+CORS_ORIGIN=https://ppl-workout-tracker.vercel.app
