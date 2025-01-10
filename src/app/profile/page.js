@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { storage } from '@/lib/storage'
 
 const TimeRange = {
   MONTH: 'month',
@@ -192,35 +193,20 @@ const ProfilePage = () => {
   const [selectedExercise, setSelectedExercise] = useState("Bench Press")
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser')
+    const savedUser = storage.getUser()
+    const savedStats = storage.getStats()
+    const savedGoals = storage.getGoals()
+    
     if (savedUser) {
-      const userData = JSON.parse(savedUser)
-      setUser(userData)
-      
-      // Load profile data
-      const savedProfile = localStorage.getItem(`profile_${userData.username}`)
-      if (savedProfile) {
-        const profileData = JSON.parse(savedProfile)
-        setPersonalStats(profileData.personalStats || personalStats)
-        setGoals(profileData.goals || goals)
-      }
-      
-      // Load profile image
-      const savedImage = localStorage.getItem(`profile_image_${userData.username}`)
-      if (savedImage) {
-        setProfileImage(savedImage)
-      }
+      setUser(savedUser)
+    }
+    if (savedStats) {
+      setPersonalStats(savedStats)
+    }
+    if (savedGoals) {
+      setGoals(savedGoals)
     }
   }, [])
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`profile_${user.username}`, JSON.stringify({
-        personalStats,
-        goals
-      }))
-    }
-  }, [personalStats, goals, user])
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0]
@@ -284,37 +270,30 @@ const ProfilePage = () => {
     return (workouts.length / weeks).toFixed(1)
   }
 
-  const handleChangePassword = async () => {
+  const handleChangePassword = () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("New passwords don't match")
+      setPasswordError("Passwords don't match")
       return
     }
+    
+    const updatedUser = { ...user, password: passwordForm.newPassword }
+    storage.setUser(updatedUser)
+    setUser(updatedUser)
+    setIsChangingPassword(false)
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    })
+  }
 
-    try {
-      const response = await fetch(`${API_URL}/users/${user.username}/password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-        }),
-      })
+  const handleSaveStats = () => {
+    storage.setStats(personalStats)
+    setIsEditingStats(false)
+  }
 
-      const data = await response.json()
-      if (!response.ok) {
-        setPasswordError(data.message)
-        return
-      }
-
-      setIsChangingPassword(false)
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-      setPasswordError('')
-    } catch (error) {
-      setPasswordError('Failed to update password')
-      console.error('Password update error:', error)
-    }
+  const handleSaveGoals = () => {
+    storage.setGoals(goals)
   }
 
   if (!user) {
