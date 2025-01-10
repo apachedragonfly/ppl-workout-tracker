@@ -22,6 +22,13 @@ import {
 } from 'recharts'
 import { HeatmapChart } from '@/components/workout-app'
 import { API_URL } from '@/config'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const TimeRange = {
   MONTH: 'month',
@@ -67,14 +74,10 @@ const ExerciseStats = ({ exercise, logs }) => {
     
     const maxWeight = Math.max(...exerciseData.map(d => d.weight))
     const avgWeight = exerciseData.reduce((sum, d) => sum + d.weight, 0) / exerciseData.length
-    const totalVolume = exerciseData.reduce((sum, d) => sum + d.volume, 0)
-    const frequency = exerciseData.length
 
     return {
       maxWeight,
-      avgWeight: Math.round(avgWeight),
-      totalVolume,
-      frequency
+      avgWeight: Math.round(avgWeight)
     }
   }, [exerciseData])
 
@@ -112,7 +115,7 @@ const ExerciseStats = ({ exercise, logs }) => {
       </CardHeader>
       <CardContent className="p-3">
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-2 gap-2 text-center">
             <div>
               <p className="text-xs text-gray-500">Max Weight</p>
               <p className="text-sm font-bold">{stats.maxWeight} lbs</p>
@@ -120,10 +123,6 @@ const ExerciseStats = ({ exercise, logs }) => {
             <div>
               <p className="text-xs text-gray-500">Avg Weight</p>
               <p className="text-sm font-bold">{stats.avgWeight} lbs</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Frequency</p>
-              <p className="text-sm font-bold">{stats.frequency}x</p>
             </div>
           </div>
           
@@ -190,6 +189,7 @@ const ProfilePage = () => {
     confirmPassword: ''
   })
   const [passwordError, setPasswordError] = useState('')
+  const [selectedExercise, setSelectedExercise] = useState("Bench Press")
 
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser')
@@ -456,15 +456,40 @@ const ProfilePage = () => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="space-y-4">
-            {Object.values(user.customWorkouts).map((workout) =>
-              workout.exercises.map((exercise) => (
-                <ExerciseStats
-                  key={exercise.name}
-                  exercise={exercise}
-                  logs={user.workoutLogs}
-                />
-              ))
+          <div className="space-y-4 p-4">
+            <div className="flex items-center justify-between">
+              <Select value={selectedExercise} onValueChange={setSelectedExercise}>
+                <SelectTrigger className="w-[200px] bg-white border border-input">
+                  <SelectValue placeholder="Select exercise" />
+                </SelectTrigger>
+                <SelectContent 
+                  className="bg-white border border-input shadow-md z-50" 
+                  position="popper" 
+                  side="bottom" 
+                  align="start"
+                  sideOffset={4}
+                >
+                  {Object.values(user.customWorkouts).flatMap(workout =>
+                    workout.exercises.map(exercise => (
+                      <SelectItem 
+                        key={exercise.name} 
+                        value={exercise.name}
+                        className="hover:bg-gray-100"
+                      >
+                        {exercise.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedExercise && (
+              <ExerciseStats
+                key={selectedExercise}
+                exercise={{ name: selectedExercise }}
+                logs={user.workoutLogs}
+              />
             )}
           </div>
         </CollapsibleContent>
