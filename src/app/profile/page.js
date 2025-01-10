@@ -21,7 +21,6 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { HeatmapChart } from '@/components/workout-app'
-import { API_URL } from '@/config'
 import {
   Select,
   SelectContent,
@@ -29,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { storage } from '@/lib/storage'
 
 const TimeRange = {
   MONTH: 'month',
@@ -193,20 +191,35 @@ const ProfilePage = () => {
   const [selectedExercise, setSelectedExercise] = useState("Bench Press")
 
   useEffect(() => {
-    const savedUser = storage.getUser()
-    const savedStats = storage.getStats()
-    const savedGoals = storage.getGoals()
-    
+    const savedUser = localStorage.getItem('currentUser')
     if (savedUser) {
-      setUser(savedUser)
-    }
-    if (savedStats) {
-      setPersonalStats(savedStats)
-    }
-    if (savedGoals) {
-      setGoals(savedGoals)
+      const userData = JSON.parse(savedUser)
+      setUser(userData)
+      
+      // Load profile data
+      const savedProfile = localStorage.getItem(`profile_${userData.username}`)
+      if (savedProfile) {
+        const profileData = JSON.parse(savedProfile)
+        setPersonalStats(profileData.personalStats || personalStats)
+        setGoals(profileData.goals || goals)
+      }
+      
+      // Load profile image
+      const savedImage = localStorage.getItem(`profile_image_${userData.username}`)
+      if (savedImage) {
+        setProfileImage(savedImage)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`profile_${user.username}`, JSON.stringify({
+        personalStats,
+        goals
+      }))
+    }
+  }, [personalStats, goals, user])
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0]
@@ -270,30 +283,37 @@ const ProfilePage = () => {
     return (workouts.length / weeks).toFixed(1)
   }
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("Passwords don't match")
+      setPasswordError("New passwords don't match")
       return
     }
-    
-    const updatedUser = { ...user, password: passwordForm.newPassword }
-    storage.setUser(updatedUser)
-    setUser(updatedUser)
-    setIsChangingPassword(false)
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    })
-  }
 
-  const handleSaveStats = () => {
-    storage.setStats(personalStats)
-    setIsEditingStats(false)
-  }
+    try {
+      const response = await fetch(`${API_URL}/users/${user.username}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      })
 
-  const handleSaveGoals = () => {
-    storage.setGoals(goals)
+      const data = await response.json()
+      if (!response.ok) {
+        setPasswordError(data.message)
+        return
+      }
+
+      setIsChangingPassword(false)
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setPasswordError('')
+    } catch (error) {
+      setPasswordError('Failed to update password')
+      console.error('Password update error:', error)
+    }
   }
 
   if (!user) {
