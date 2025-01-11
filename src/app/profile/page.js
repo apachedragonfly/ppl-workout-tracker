@@ -116,12 +116,12 @@ const ExerciseStats = ({ exercise, logs }) => {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2 text-center">
             <div>
-              <p className="text-xs text-gray-500">Max Weight</p>
+              <p className="text-xs text-gray-500">Personal Best</p>
               <p className="text-sm font-bold">{stats.maxWeight} lbs</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Avg Weight</p>
-              <p className="text-sm font-bold">{stats.avgWeight} lbs</p>
+              <p className="text-xs text-gray-500">Progress</p>
+              <p className="text-sm font-bold">+{stats.avgWeight}%</p>
             </div>
           </div>
           
